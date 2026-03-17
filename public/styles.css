@@ -74,6 +74,10 @@ body{
   border-color: rgba(125,211,252,.35);
   background: linear-gradient(135deg, rgba(125,211,252,.18), rgba(167,139,250,.16));
 }
+.btn.danger{
+  border-color: rgba(251,113,133,.45);
+  background: linear-gradient(135deg, rgba(251,113,133,.14), rgba(0,0,0,.14));
+}
 .hidden{display:none !important}
 .linkBox{margin-top:10px; padding:12px; border-radius:14px; border:1px dashed rgba(255,255,255,.16)}
 .linkRow{display:flex; gap:10px; align-items:center; margin-top:10px}
@@ -362,6 +366,45 @@ body{
 
 .boardFooter{display:flex; justify-content:space-between; margin-top:10px; gap:10px}
 .tinyHint{color:rgba(255,255,255,.75); font-size:12px}
+
+.chatPanel{
+  margin-top:12px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.16);
+  padding:10px;
+}
+.chatLog{
+  height: 120px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:6px;
+  border-radius:14px;
+  background: rgba(0,0,0,.14);
+  border:1px solid rgba(255,255,255,.10);
+}
+.chatMsg{
+  font-size:12px;
+  line-height:1.35;
+  color: rgba(255,255,255,.86);
+}
+.chatMeta{
+  color: rgba(255,255,255,.55);
+  font-weight:800;
+  letter-spacing:.15px;
+}
+.chatRow{display:flex; gap:10px; margin-top:10px}
+.chatInput{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.20);
+  color: var(--text);
+  outline:none;
+}
 
 /* Modal */
 .modal{position:fixed; inset:0; background: rgba(0,0,0,.55); display:grid; place-items:center; padding:18px}

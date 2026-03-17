@@ -36,6 +36,7 @@
               <button id="clockBlack" class="clockBtn" aria-label="Black clock">
                 <span class="clockTime" id="clockBlackTime">05:00</span>
               </button>
+              <button id="resignBlack" class="btn danger" type="button">Resign</button>
               <div class="emoteRow">
                 <button class="emoteBtn" data-emote="think" aria-label="Black thinks">Think</button>
                 <button class="emoteBtn" data-emote="yawn" aria-label="Black yawns">Yawn</button>
@@ -74,6 +75,14 @@
               <div class="tinyHint" id="tapHint">Drag a piece. Tap your clock to play the move.</div>
               <div class="tinyHint" id="spectatorHint">Spectators can watch and send emotes.</div>
             </div>
+
+            <div class="chatPanel" aria-label="Chat">
+              <div id="chatLog" class="chatLog" aria-live="polite"></div>
+              <div class="chatRow">
+                <input id="chatInput" class="chatInput" type="text" placeholder="Send a message…" maxlength="200" />
+                <button id="chatSend" class="btn">Send</button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -90,6 +99,7 @@
               <button id="clockWhite" class="clockBtn" aria-label="White clock">
                 <span class="clockTime" id="clockWhiteTime">05:00</span>
               </button>
+              <button id="resignWhite" class="btn danger" type="button">Resign</button>
               <div class="emoteRow">
                 <button class="emoteBtn" data-emote="think" aria-label="White thinks">Think</button>
                 <button class="emoteBtn" data-emote="yawn" aria-label="White yawns">Yawn</button>

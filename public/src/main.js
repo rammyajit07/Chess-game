@@ -34,6 +34,11 @@ const shareBtn = $("#shareBtn");
 const spectateBtn = $("#spectateBtn");
 const tapHint = $("#tapHint");
 const spectatorHint = $("#spectatorHint");
+const resignWhiteBtn = $("#resignWhite");
+const resignBlackBtn = $("#resignBlack");
+const chatLog = $("#chatLog");
+const chatInput = $("#chatInput");
+const chatSend = $("#chatSend");
 
 const state = {
   role: "spectator",
@@ -49,7 +54,9 @@ const state = {
   presence: { w: false, b: false },
   gameOverShown: false,
   timeControl: { baseMs: 5 * 60 * 1000, incrementMs: 0 },
-  taken: { w: [], b: [] }
+  taken: { w: [], b: [] },
+  ended: null,
+  chat: []
 };
 
 function isPlayer() {
@@ -57,7 +64,11 @@ function isPlayer() {
 }
 
 function myTurn() {
-  return isPlayer() && state.turn === state.color;
+  return isPlayer() && !state.ended && !state.chess.isGameOver() && state.turn === state.color;
+}
+
+function canInteract() {
+  return !state.ended && !state.chess.isGameOver();
 }
 
 function squareName(fileIdx, rankIdx) {
@@ -286,7 +297,11 @@ function showGameOverOverlay(message) {
         className: "btn primary",
         onClick: async () => {
           try {
-            const res = await fetch("/api/new");
+            const res = await fetch("/api/new", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ baseMinutes: 5, incrementSeconds: 0 })
+            });
             const data = await res.json();
             window.location.href = data.url;
           } catch {
@@ -299,6 +314,19 @@ function showGameOverOverlay(message) {
 }
 
 function maybeShowGameOverOverlay() {
+  if (state.ended) {
+    if (state.ended.reason === "resign") {
+      const winner = state.ended.winner === "w" ? "White" : "Black";
+      showGameOverOverlay(`Resignation. ${winner} wins.`);
+      return;
+    }
+    if (state.ended.reason === "flag") {
+      showGameOverOverlay("Time is up. Flag fall.");
+      return;
+    }
+    showGameOverOverlay("Game over.");
+    return;
+  }
   if (!state.chess.isGameOver()) return;
   if (state.chess.isCheckmate()) {
     const winner = state.turn === "w" ? "Black" : "White";
@@ -359,6 +387,7 @@ function onPointerDownSquare(e) {
   Sfx.resume();
   if (!isPlayer()) return;
   if (!myTurn()) return;
+  if (!canInteract()) return;
   if (state.staged) return; // finish staged move first
 
   const sq = e.currentTarget.dataset.square;
@@ -514,6 +543,7 @@ function tapMyClock() {
   Sfx.resume();
   if (!isPlayer()) return;
   if (!myTurn()) return;
+  if (!canInteract()) return;
   Sfx.clockTap();
   if (!state.staged) return;
   socket.emit("playMove", state.staged);
@@ -523,12 +553,53 @@ function tapMyClock() {
   updateStatus();
 }
 
+function roleLabel(from) {
+  if (from === "w") return "White";
+  if (from === "b") return "Black";
+  return "Spectator";
+}
+
+function appendChatMessage(msg, { scroll = true } = {}) {
+  if (!chatLog) return;
+  const atBottom = chatLog.scrollTop + chatLog.clientHeight >= chatLog.scrollHeight - 24;
+
+  const row = document.createElement("div");
+  row.className = "chatMsg";
+  const t = new Date(msg.ts || Date.now());
+  const hh = String(t.getHours()).padStart(2, "0");
+  const mm = String(t.getMinutes()).padStart(2, "0");
+  row.innerHTML = `<span class="chatMeta">[${hh}:${mm}] ${roleLabel(msg.from)}:</span> ${escapeHtml(
+    msg.text || ""
+  )}`;
+  chatLog.appendChild(row);
+
+  if (scroll && atBottom) chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderChat(messages) {
+  if (!chatLog) return;
+  chatLog.innerHTML = "";
+  for (const m of messages || []) appendChatMessage(m, { scroll: false });
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
 function applyServerState(s) {
   state.fen = s.fen;
   state.turn = s.turn;
   state.clocks = s.clocks || state.clocks;
   if (s.timeControl?.baseMs != null) state.timeControl = s.timeControl;
   state.taken = computeTakenFromPgn(s.pgn);
+  state.ended = s.ended || null;
+  state.chat = Array.isArray(s.chat) ? s.chat : state.chat;
   state.chess.load(state.fen);
   state.lastMove = s.lastMove || null;
   updateClocks();
@@ -536,6 +607,7 @@ function applyServerState(s) {
   renderPieces();
   renderTakenTray(takenByWhite, state.taken.w);
   renderTakenTray(takenByBlack, state.taken.b);
+  renderChat(state.chat);
   maybeShowGameOverOverlay();
 
   if (s.lastMove?.flags?.includes("c")) Sfx.capture();
@@ -551,6 +623,9 @@ function setRole({ role, color }) {
   spectatorHint.classList.toggle("hidden", role !== "spectator");
   undoBtn.disabled = role !== "player";
   redoBtn.disabled = role !== "player";
+
+  if (resignWhiteBtn) resignWhiteBtn.disabled = !(role === "player" && color === "w");
+  if (resignBlackBtn) resignBlackBtn.disabled = !(role === "player" && color === "b");
 }
 
 function runAvatarEmote(target, type) {
@@ -637,6 +712,43 @@ shareBtn.addEventListener("click", async () => {
   }
 });
 
+function confirmResign() {
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `<div style="color:rgba(255,255,255,.82);font-size:13px">Are you sure you want to resign?</div>`;
+  const close = showModal({
+    title: "Resign",
+    bodyEl: wrap,
+    actions: [
+      button("Cancel", { className: "btn", onClick: () => close() }),
+      button("Resign", {
+        className: "btn danger",
+        onClick: () => {
+          socket.emit("resign");
+          close();
+        }
+      })
+    ]
+  });
+}
+
+if (resignWhiteBtn) resignWhiteBtn.addEventListener("click", () => confirmResign());
+if (resignBlackBtn) resignBlackBtn.addEventListener("click", () => confirmResign());
+
+function sendChat() {
+  if (!chatInput) return;
+  Sfx.resume();
+  const text = chatInput.value.trim();
+  if (!text) return;
+  socket.emit("chat", { text });
+  chatInput.value = "";
+}
+
+if (chatSend) chatSend.addEventListener("click", sendChat);
+if (chatInput)
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendChat();
+  });
+
 socket.on("connect", async () => {
   statusText.textContent = "Joining…";
   socket.emit("joinGame", { gameId });
@@ -675,6 +787,7 @@ socket.on("flag", ({ clocks }) => {
   state.clocks = clocks;
   updateClocks();
   statusText.textContent = "Flag fall. Time is up.";
+  state.ended = { reason: "flag", winner: state.turn === "w" ? "b" : "w" };
   showGameOverOverlay("Time is up. Flag fall.");
 });
 
@@ -683,6 +796,12 @@ socket.on("emote", ({ type, from }) => {
   const target = from === "w" ? "w" : from === "b" ? "b" : null;
   if (target) runAvatarEmote(target, type);
   Sfx.emote();
+});
+
+socket.on("chat", (msg) => {
+  state.chat.push(msg);
+  if (state.chat.length > 200) state.chat.splice(0, state.chat.length - 200);
+  appendChatMessage(msg);
 });
 
 socket.on("undoOffered", ({ by }) => {

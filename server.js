@@ -36,6 +36,16 @@ app.post("/api/new", (req, res) => {
   res.json({ gameId, url: `/game/${gameId}` });
 });
 
+// Backwards-compatible default (5+0) creator endpoint.
+app.get("/api/new", (req, res) => {
+  const gameId = nanoid(10);
+  pendingConfigs.set(gameId, {
+    baseMs: START_TIME_MS,
+    incrementMs: INCREMENT_MS
+  });
+  res.json({ gameId, url: `/game/${gameId}` });
+});
+
 app.get("/game/:id", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "game.html"));
 });
@@ -56,7 +66,9 @@ const io = new Server(server, {
  *   turnStartTs: number, // when current turn started
  *   lastTickTs: number,
  *   redoStack: Array<{ from,to,promotion }>,
- *   undoOffer: null | { fromSocketId, createdAt }
+ *   undoOffer: null | { fromSocketId, createdAt },
+ *   ended: null | { reason: "resign" | "flag", winner: "w"|"b", by?: "w"|"b", at: number },
+ *   chat: Array<{ id: string, from: "w"|"b"|"spectator", text: string, ts: number }>
  * }
  */
 const games = new Map();
@@ -84,7 +96,9 @@ function getOrCreateGame(gameId) {
       turnStartTs: t,
       lastTickTs: t,
       redoStack: [],
-      undoOffer: null
+      undoOffer: null,
+      ended: null,
+      chat: []
     });
   }
   return games.get(gameId);
@@ -102,7 +116,7 @@ function computeClocks(game) {
   // Return clocks as if ticked to "now" without mutating.
   const t = now();
   const clocks = { ...game.clocks };
-  if (!game.chess.isGameOver()) {
+  if (!game.chess.isGameOver() && !game.ended) {
     const turnKey = colorToKey(game.chess.turn());
     const delta = Math.max(0, t - game.turnStartTs);
     clocks[turnKey] = Math.max(0, clocks[turnKey] - delta);
@@ -129,9 +143,11 @@ function snapshot(game, extras = {}) {
     inCheck: chess.inCheck(),
     checkmate: chess.isCheckmate(),
     stalemate: chess.isStalemate(),
-    gameOver: chess.isGameOver(),
+    gameOver: chess.isGameOver() || Boolean(game.ended),
     clocks,
     timeControl: { baseMs: game.baseMs, incrementMs: game.incrementMs },
+    ended: game.ended,
+    chat: game.chat.slice(-50),
     playersPresent: {
       w: Boolean(game.players.w),
       b: Boolean(game.players.b)
@@ -202,7 +218,7 @@ io.on("connection", (socket) => {
     const role = socket.data.role;
     const color = socket.data.color;
     if (role !== "player" || !color) return;
-    if (game.chess.isGameOver()) return;
+    if (game.chess.isGameOver() || game.ended) return;
 
     // clock flag
     const clocks = computeClocks(game);
@@ -247,10 +263,50 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("chat", ({ text }) => {
+    const gameId = socket.data.gameId;
+    const game = gameId ? games.get(gameId) : null;
+    if (!game) return;
+    const msg = String(text || "").replace(/\s+/g, " ").trim();
+    if (!msg) return;
+    if (msg.length > 200) return;
+
+    const from =
+      socket.data.role === "player"
+        ? socket.data.color
+        : "spectator";
+
+    const entry = {
+      id: nanoid(10),
+      from,
+      text: msg,
+      ts: now()
+    };
+    game.chat.push(entry);
+    if (game.chat.length > 200) game.chat.splice(0, game.chat.length - 200);
+    io.to(room(gameId)).emit("chat", entry);
+  });
+
+  socket.on("resign", () => {
+    const gameId = socket.data.gameId;
+    const game = gameId ? games.get(gameId) : null;
+    if (!game) return;
+    if (game.ended || game.chess.isGameOver()) return;
+    if (socket.data.role !== "player") return;
+    const by = socket.data.color;
+    if (!by) return;
+
+    applyClockDeltaMutating(game);
+    const winner = by === "w" ? "b" : "w";
+    game.ended = { reason: "resign", winner, by, at: now() };
+    io.to(room(gameId)).emit("state", snapshot(game, { lastMove: null }));
+  });
+
   socket.on("offerUndo", () => {
     const gameId = socket.data.gameId;
     const game = gameId ? games.get(gameId) : null;
     if (!game) return;
+    if (game.ended) return;
     if (socket.data.role !== "player") return;
     if (game.chess.history().length === 0) return;
     const other = otherPlayerSocketId(game, socket.id);
@@ -264,6 +320,7 @@ io.on("connection", (socket) => {
     const gameId = socket.data.gameId;
     const game = gameId ? games.get(gameId) : null;
     if (!game || !game.undoOffer) return;
+    if (game.ended) return;
     const other = otherPlayerSocketId(game, socket.id);
     if (!other) return;
     if (game.undoOffer.fromSocketId !== other) return;
@@ -292,6 +349,7 @@ io.on("connection", (socket) => {
     const gameId = socket.data.gameId;
     const game = gameId ? games.get(gameId) : null;
     if (!game) return;
+    if (game.ended) return;
     if (socket.data.role !== "player") return;
     if (game.redoStack.length === 0) return;
 
@@ -333,7 +391,7 @@ io.on("connection", (socket) => {
 
 setInterval(() => {
   for (const [gameId, game] of games.entries()) {
-    if (game.chess.isGameOver()) continue;
+    if (game.chess.isGameOver() || game.ended) continue;
     const clocks = computeClocks(game);
     io.to(room(gameId)).emit("clock", clocks);
     if (clocks.w <= 0 || clocks.b <= 0) {
