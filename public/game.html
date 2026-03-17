@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Chess</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="app">
+    <div class="gameShell">
+      <header class="topBar">
+        <div class="topLeft">
+          <a class="backLink" href="/" aria-label="Back">←</a>
+          <div class="roomMeta">
+            <div class="roomTitle">Game</div>
+            <div id="gameIdLabel" class="roomSub"></div>
+          </div>
+        </div>
+        <div class="topRight">
+          <button id="shareBtn" class="btn">Share link</button>
+          <button id="spectateBtn" class="btn hidden" title="You are a spectator">Spectator</button>
+        </div>
+      </header>
+
+      <main class="arena">
+        <section class="sidePanel left">
+          <div class="playerCard" data-side="black">
+            <div class="avatarWrap">
+              <div id="avatarBlack" class="avatar" data-skin="mid" aria-hidden="true"></div>
+            </div>
+            <div class="playerInfo">
+              <div class="nameRow">
+                <div class="playerName">Black</div>
+                <div id="presenceBlack" class="presenceDot off" title="Disconnected"></div>
+              </div>
+              <button id="clockBlack" class="clockBtn" aria-label="Black clock">
+                <span class="clockTime" id="clockBlackTime">05:00</span>
+              </button>
+              <div class="emoteRow">
+                <button class="emoteBtn" data-emote="think" aria-label="Black thinks">Think</button>
+                <button class="emoteBtn" data-emote="yawn" aria-label="Black yawns">Yawn</button>
+                <button class="emoteBtn" data-emote="drink" aria-label="Black drinks">Drink</button>
+                <button class="emoteBtn" data-emote="slam" aria-label="Black slams">Slam</button>
+                <button class="emoteBtn" data-emote="cheer" aria-label="Black cheers">Cheer</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="boardPanel">
+          <div class="tableFrame">
+            <div class="boardHeader">
+              <div id="statusText" class="statusText">Connecting…</div>
+              <div class="boardActions">
+                <button id="undoBtn" class="btn">Undo</button>
+                <button id="redoBtn" class="btn">Redo</button>
+              </div>
+            </div>
+
+            <div class="boardWrap">
+              <div class="tableSideTray left" aria-label="Pieces taken by Black">
+                <div class="takenLabel">Black took</div>
+                <button id="takenByBlack" class="takenTray" type="button" title="Tap for BAM!"></button>
+              </div>
+              <div id="board" class="board" aria-label="Chess board"></div>
+              <div id="dragLayer" class="dragLayer" aria-hidden="true"></div>
+              <div class="tableSideTray right" aria-label="Pieces taken by White">
+                <div class="takenLabel">White took</div>
+                <button id="takenByWhite" class="takenTray" type="button" title="Tap for BAM!"></button>
+              </div>
+            </div>
+
+            <div class="boardFooter">
+              <div class="tinyHint" id="tapHint">Drag a piece. Tap your clock to play the move.</div>
+              <div class="tinyHint" id="spectatorHint">Spectators can watch and send emotes.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sidePanel right">
+          <div class="playerCard" data-side="white">
+            <div class="avatarWrap">
+              <div id="avatarWhite" class="avatar" data-skin="light" aria-hidden="true"></div>
+            </div>
+            <div class="playerInfo">
+              <div class="nameRow">
+                <div class="playerName">White</div>
+                <div id="presenceWhite" class="presenceDot off" title="Disconnected"></div>
+              </div>
+              <button id="clockWhite" class="clockBtn" aria-label="White clock">
+                <span class="clockTime" id="clockWhiteTime">05:00</span>
+              </button>
+              <div class="emoteRow">
+                <button class="emoteBtn" data-emote="think" aria-label="White thinks">Think</button>
+                <button class="emoteBtn" data-emote="yawn" aria-label="White yawns">Yawn</button>
+                <button class="emoteBtn" data-emote="drink" aria-label="White drinks">Drink</button>
+                <button class="emoteBtn" data-emote="slam" aria-label="White slams">Slam</button>
+                <button class="emoteBtn" data-emote="cheer" aria-label="White cheers">Cheer</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+        <div class="modalCard">
+          <div id="modalTitle" class="modalTitle">Promotion</div>
+          <div id="modalBody" class="modalBody"></div>
+          <div class="modalActions" id="modalActions"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+

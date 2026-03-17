@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e5eaf2"/>
+    </linearGradient>
+    <radialGradient id="h" cx="0.35" cy="0.2" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="s" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <g filter="url(#s)">
+    <ellipse cx="64" cy="106" rx="44" ry="12" fill="#000" opacity="0.18"/>
+    <path d="M40 24h12v10h10V24h12v10h10V24h12v24c0 6-3 11-8 14l-4 2v18H40V64l-4-2c-5-3-8-8-8-14V24h12v10h0V24z"
+          fill="url(#g)" stroke="#98a1b2" stroke-opacity="0.55" stroke-width="2"/>
+    <path d="M38 82h52c6 0 10 4 10 10v8H28v-8c0-6 4-10 10-10z"
+          fill="#e3e8f0" stroke="#98a1b2" stroke-opacity="0.55" stroke-width="2"/>
+    <path d="M42 38h44v12H42z" fill="rgba(0,0,0,.06)"/>
+    <path d="M42 30c6-4 15-6 24-4 8 2 15 7 16 15-5-9-19-11-28-8-6 2-10 6-12 11-2-6-2-11 0-14z" fill="url(#h)"/>
+  </g>
+</svg>
+

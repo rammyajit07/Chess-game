@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e5eaf2"/>
+    </linearGradient>
+    <radialGradient id="h" cx="0.35" cy="0.2" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="s" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <g filter="url(#s)">
+    <ellipse cx="64" cy="106" rx="44" ry="12" fill="#000" opacity="0.18"/>
+    <path d="M64 18c12 8 18 18 18 30 0 10-4 18-10 24 10 6 16 14 16 26H40c0-12 6-20 16-26-6-6-10-14-10-24 0-12 6-22 18-30z"
+          fill="url(#g)" stroke="#98a1b2" stroke-opacity="0.55" stroke-width="2"/>
+    <path d="M46 44c4 4 10 4 18-1 8-5 14-6 18-3-4-8-12-9-20-5-8 4-14 3-16-2z" fill="rgba(0,0,0,.06)"/>
+    <circle cx="64" cy="46" r="6" fill="#0b0c10" opacity="0.25"/>
+    <path d="M36 92h56c6 0 10 4 10 10v6H26v-6c0-6 4-10 10-10z"
+          fill="#e3e8f0" stroke="#98a1b2" stroke-opacity="0.55" stroke-width="2"/>
+    <path d="M48 30c6-4 16-4 24 0 7 4 11 11 10 18-4-10-13-15-22-14-7 1-13 5-16 10-2-6 0-11 4-14z" fill="url(#h)"/>
+  </g>
+</svg>
+

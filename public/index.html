@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Chess — Share a Link</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="app">
+    <div class="pageShell">
+      <div class="card introCard">
+        <div class="brandRow">
+          <div class="brandMark" aria-hidden="true"></div>
+          <div>
+            <div class="brandTitle">Online Chess</div>
+            <div class="brandSub">Create a game link, share it, play live.</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <div class="hint" style="margin-bottom:2px">Time control (creator chooses):</div>
+          <div class="linkRow" style="margin-top:0">
+            <select id="baseMinutes" class="linkInput" aria-label="Base minutes">
+              <option value="1">1 min</option>
+              <option value="2">2 min</option>
+              <option value="3">3 min</option>
+              <option value="5" selected>5 min</option>
+              <option value="10">10 min</option>
+              <option value="15">15 min</option>
+              <option value="30">30 min</option>
+            </select>
+            <select id="incrementSeconds" class="linkInput" aria-label="Increment seconds">
+              <option value="0" selected>+0 sec</option>
+              <option value="1">+1 sec</option>
+              <option value="2">+2 sec</option>
+              <option value="3">+3 sec</option>
+              <option value="5">+5 sec</option>
+              <option value="10">+10 sec</option>
+            </select>
+          </div>
+          <button id="newGameBtn" class="btn primary">Create new game link</button>
+          <div class="hint">Tip: open the link on another phone/browser to join as Black. Extra visitors become spectators.</div>
+        </div>
+
+        <div id="linkBox" class="linkBox hidden" aria-live="polite">
+          <div class="linkRow">
+            <input id="gameLink" class="linkInput" readonly />
+            <button id="copyBtn" class="btn">Copy</button>
+          </div>
+          <div class="linkRow">
+            <button id="openBtn" class="btn primary">Open game</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const newGameBtn = document.getElementById("newGameBtn");
+      const linkBox = document.getElementById("linkBox");
+      const gameLink = document.getElementById("gameLink");
+      const copyBtn = document.getElementById("copyBtn");
+      const openBtn = document.getElementById("openBtn");
+      const baseMinutes = document.getElementById("baseMinutes");
+      const incrementSeconds = document.getElementById("incrementSeconds");
+
+      async function createGame() {
+        newGameBtn.disabled = true;
+        try {
+          const res = await fetch("/api/new", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              baseMinutes: Number(baseMinutes.value),
+              incrementSeconds: Number(incrementSeconds.value)
+            })
+          });
+          const data = await res.json();
+          const url = new URL(data.url, window.location.origin).toString();
+          gameLink.value = url;
+          openBtn.onclick = () => (window.location.href = data.url);
+          linkBox.classList.remove("hidden");
+        } finally {
+          newGameBtn.disabled = false;
+        }
+      }
+
+      newGameBtn.addEventListener("click", createGame);
+      copyBtn.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(gameLink.value);
+        copyBtn.textContent = "Copied";
+        setTimeout(() => (copyBtn.textContent = "Copy"), 900);
+      });
+    </script>
+  </body>
+</html>
+
