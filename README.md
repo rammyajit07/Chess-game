@@ -22,3 +22,5 @@ Open `http://localhost:3000` in two different browsers/devices on the same netwo
 - **Look & feel**: edit `public/styles.css`.
 - **Piece art**: SVGs in `public/assets/pieces/`.
 
+
+##Author: Rammyajit Deb
